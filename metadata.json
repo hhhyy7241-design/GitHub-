@@ -1,0 +1,6 @@
+{
+  "name": "ChatPro",
+  "description": "Aplicación de mensajería instantánea profesional con canales, grupos, estados y almacenamiento local seguro.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

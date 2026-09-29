@@ -1,0 +1,91 @@
+name: Build Signed Release APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Assemble Signed Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: 'on-failure'
+          add-job-summary-as-pr-comment: 'never'
+
+      - name: Prepare Local Environment & Wrapper
+        run: |
+          # Create empty env files required by Secrets Gradle Plugin
+          touch .env
+          touch .env.example
+
+          # Ensure Gradle wrapper exists and has executable permissions
+          if [ ! -f gradlew ]; then
+            gradle wrapper || true
+          fi
+          chmod +x gradlew || true
+
+      - name: Prepare Release Signing Keystore
+        run: |
+          # Generate a valid release signing keystore if one is not provided in the repo
+          if [ ! -f my-upload-key.jks ]; then
+            echo "Generating automated Release Keystore for CI build..."
+            keytool -genkeypair -v \
+              -keystore my-upload-key.jks \
+              -alias uploadKey \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass android \
+              -keypass android \
+              -dname "CN=ChatPro, OU=Mobile, O=ChatPro, L=Havana, ST=Havana, C=CU"
+          fi
+          # Ensure redundant accessibility for root and app module paths
+          cp my-upload-key.jks app/my-upload-key.jks || true
+
+      - name: Build Signed Release APK
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+          STORE_PASSWORD: "android"
+          KEY_ALIAS: "uploadKey"
+          KEY_PASSWORD: "android"
+        run: |
+          ./gradlew :app:assembleRelease \
+            --no-daemon \
+            -Dkotlin.compiler.execution.strategy=daemon \
+            -Dksp.incremental=false \
+            -Dksp.incremental.intermodule=false \
+            --stacktrace
+
+      - name: Verify APK Output
+        run: |
+          echo "Verifying generated release APK files..."
+          ls -la app/build/outputs/apk/release/
+          if [ ! -f app/build/outputs/apk/release/*.apk ]; then
+            echo "APK generated successfully."
+          fi
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 30
+          if-no-files-found: error
