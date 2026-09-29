@@ -34,7 +34,7 @@ android {
       }
       storeFile = resolvedFile
       storePassword = System.getenv("STORE_PASSWORD") ?: "android"
-      keyAlias = System.getenv("KEY_ALIAS") ?: "uploadKey"
+      keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
       keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
     }
     create("debugConfig") {

@@ -114,7 +114,7 @@ object TimeUtils {
 
         if (targetCal.get(Calendar.YEAR) == nowCal.get(Calendar.YEAR)) {
             val day = targetCal.get(Calendar.DAY_OF_MONTH)
-            val month = SimpleDateFormat("MMM", Locale("es", "ES")).format(Date(timestamp))
+            val month = SimpleDateFormat("MMM", Locale.forLanguageTag("es-ES")).format(Date(timestamp))
             return "$day $month"
         }
 

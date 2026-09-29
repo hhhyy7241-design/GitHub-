@@ -42,20 +42,30 @@ jobs:
           fi
           chmod +x gradlew || true
 
-      - name: Prepare Release Signing Keystore
+      - name: Prepare Release Signing Keystore & Detect Alias
         run: |
-          # Generate a valid release signing keystore if one is not provided in the repo
-          if [ ! -f my-upload-key.jks ]; then
+          if [ -f my-upload-key.jks ]; then
+            echo "Found existing my-upload-key.jks in workspace."
+            # Detect alias dynamically from keystore
+            DETECTED_ALIAS=$(keytool -list -keystore my-upload-key.jks -storepass android 2>/dev/null | grep -E "PrivateKeyEntry|trustedCertEntry" | awk -F',' '{print $1}' | tr -d ' ' | head -n 1)
+            if [ -n "$DETECTED_ALIAS" ]; then
+              echo "Detected key alias from keystore: $DETECTED_ALIAS"
+              echo "KEY_ALIAS=$DETECTED_ALIAS" >> $GITHUB_ENV
+            else
+              echo "KEY_ALIAS=upload" >> $GITHUB_ENV
+            fi
+          else
             echo "Generating automated Release Keystore for CI build..."
             keytool -genkeypair -v \
               -keystore my-upload-key.jks \
-              -alias uploadKey \
+              -alias upload \
               -keyalg RSA \
               -keysize 2048 \
               -validity 10000 \
               -storepass android \
               -keypass android \
               -dname "CN=ChatPro, OU=Mobile, O=ChatPro, L=Havana, ST=Havana, C=CU"
+            echo "KEY_ALIAS=upload" >> $GITHUB_ENV
           fi
           # Ensure redundant accessibility for root and app module paths
           cp my-upload-key.jks app/my-upload-key.jks || true
@@ -64,7 +74,6 @@ jobs:
         env:
           KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
           STORE_PASSWORD: "android"
-          KEY_ALIAS: "uploadKey"
           KEY_PASSWORD: "android"
         run: |
           ./gradlew :app:assembleRelease \

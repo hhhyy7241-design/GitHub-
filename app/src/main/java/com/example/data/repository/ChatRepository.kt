@@ -747,16 +747,16 @@ class ChatRepository(
                                         senderAvatar = obj.optString("senderAvatar", ""),
                                         timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
                                         text = obj.optString("text", ""),
-                                        attachmentUrl = obj.optString("attachmentUrl", null),
-                                        attachmentName = obj.optString("attachmentName", null),
-                                        attachmentType = obj.optString("attachmentType", null),
+                                        attachmentUrl = if (obj.has("attachmentUrl") && !obj.isNull("attachmentUrl")) obj.getString("attachmentUrl") else null,
+                                        attachmentName = if (obj.has("attachmentName") && !obj.isNull("attachmentName")) obj.getString("attachmentName") else null,
+                                        attachmentType = if (obj.has("attachmentType") && !obj.isNull("attachmentType")) obj.getString("attachmentType") else null,
                                         attachmentSize = obj.optLong("attachmentSize", 0L),
                                         isOutgoing = false,
                                         status = "DELIVERED",
                                         evidenceId = ev.id,
-                                        replyToId = obj.optString("replyToId", null),
-                                        replyToSender = obj.optString("replyToSender", null),
-                                        replyToText = obj.optString("replyToText", null)
+                                        replyToId = if (obj.has("replyToId") && !obj.isNull("replyToId")) obj.getString("replyToId") else null,
+                                        replyToSender = if (obj.has("replyToSender") && !obj.isNull("replyToSender")) obj.getString("replyToSender") else null,
+                                        replyToText = if (obj.has("replyToText") && !obj.isNull("replyToText")) obj.getString("replyToText") else null
                                     )
                                     messageDao.insertOrUpdate(newMsg)
                                     val snip = when {
